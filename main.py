@@ -13,6 +13,7 @@ from kivy.uix.spinner import Spinner
 from kivy.uix.slider import Slider
 from kivy.uix.checkbox import CheckBox
 from kivy.graphics import Line, Ellipse, Color, Rectangle, RoundedRectangle
+from kivy.uix.image import Image
 from kivy.animation import Animation
 from kivy.core.audio import SoundLoader
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -90,6 +91,51 @@ class AtaxxAI:
             self.model.backward(state, target_f)
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
+class AICharacter:
+    def __init__(self, game_screen):
+        self.game_screen = game_screen
+        self.images = {
+            'neutral': './image/bot/neutral_robot.png',
+            'happy': './image/bot/happy_robot.png',
+            'sad': './image/bot/sad_robot.png'
+        }
+        self.sounds = {
+            'happy': './sound/bot/happy.mp3',
+            'sad': './sound/bot/sad.mp3'
+        }
+        self.current_emotion = 'neutral'
+        self.image_widget = Image(source=self.images['neutral'])
+        self.position_character()
+        self.game_screen.add_widget(self.image_widget)
+
+    def position_character(self):
+        # Position the character at the top-right of the grid
+        self.image_widget.size_hint = (None, None)
+        self.image_widget.size = (150, 150)  # Increased size from 100x100 to 150x150
+        self.image_widget.pos = (
+            self.game_screen.grid_x + self.game_screen.cell_size * self.game_screen.cols - 350,  # Move 50 pixels to the right
+            self.game_screen.grid_y + self.game_screen.cell_size * self.game_screen.rows + 50   # Move 50 pixels up
+        )
+
+    def change_emotion(self, emotion):
+        if emotion in self.images:
+            self.current_emotion = emotion
+            self.image_widget.source = self.images[emotion]
+            self.play_sound(emotion)
+
+    def play_sound(self, emotion):
+        if emotion in self.sounds:
+            sound = SoundLoader.load(self.sounds[emotion])
+            if sound:
+                sound.play()
+
+    def evaluate_outcome(self, result):
+        if result > 0:  # AI wins
+            self.change_emotion('happy')
+        elif result < 0:  # AI loses
+            self.change_emotion('sad')
+        else:  # Draw
+            self.change_emotion('neutral')
 
 class AtaxxStartScreen(BoxLayout):
     settings = {
@@ -413,6 +459,7 @@ class GameScreen(FloatLayout):
         super().__init__(**kwargs)
         self.circle_references = {}
         self.selected_circle = None  # Stores the coordinates of the selected circle
+        self.ai_character = None
 
         # Extract timer settings from the passed configuration
         self.is_vs_computer = is_vs_computer  # Flag for AI mode
@@ -542,11 +589,15 @@ class GameScreen(FloatLayout):
 
         # Start timer updates
         self.timer_event = Clock.schedule_interval(self.update_timer, 1)
+        
+        if self.is_vs_computer:
+            self.ai_character = AICharacter(self)
+
 
     def reset_game(self, selected_level):
         """Reset the game to its initial state."""
         # Clear all cells visually and remove their references
-        for (row, col) in list(self.circle_references.keys()):  # Use list() to avoid modifying during iteration
+        for (row, col) in list(self.circle_references.keys()):
             self.clear_cell(row, col)
 
         # Clear circle references and reset board state
@@ -556,7 +607,18 @@ class GameScreen(FloatLayout):
         # Redraw the starting positions
         for row_idx, row in enumerate(selected_level["board"]):
             for col_idx, cell_value in enumerate(row):
-                if cell_value == 1:  # Player 1
+                if cell_value == 9:  # Untraversable cell
+                    self.board_state[row_idx][col_idx] = 9
+                    with self.canvas.before:
+                        Color(0.5, 0.5, 0.5, 1)  # Gray for untraversable cells
+                        Rectangle(
+                            pos=(
+                                self.grid_x + col_idx * self.cell_size,
+                                self.grid_y + row_idx * self.cell_size,
+                            ),
+                            size=(self.cell_size, self.cell_size),
+                        )
+                elif cell_value == 1:  # Player 1
                     self.board_state[row_idx][col_idx] = 1
                     self.draw_circle(
                         self.grid_x, self.grid_y, col_idx, row_idx, self.cell_size, (1, 0, 0, 1),
@@ -567,7 +629,7 @@ class GameScreen(FloatLayout):
                     self.draw_circle(
                         self.grid_x, self.grid_y, col_idx, row_idx, self.cell_size, (0, 0, 1, 1),
                         is_starting_cell=True, owner=2
-                )
+                    )
 
     def _update_bg(self, *args):
         """Update the background size and position."""
@@ -1017,24 +1079,10 @@ class GameScreen(FloatLayout):
             self.switch_turn()
             return
 
-        # Select move that maximizes the difference in total pieces
-        best_move = None
-        best_difference = -float('inf')
+        move = self.ai.get_action(state, valid_moves)
+        src_row, src_col, target_row, target_col = move
 
-        for move in valid_moves:
-            # Simulate the move 
-            new_state = self.ai.apply_move(state.reshape(self.rows, self.cols), move)
-            ai_pieces = np.sum(new_state == 2)
-            player_pieces = np.sum(new_state == 1)
-            difference = ai_pieces - player_pieces
-
-            # Check if this move is the best one
-            if difference > best_difference:
-                best_difference = difference
-                best_move = move
-
-        # Apply the best move found
-        src_row, src_col, target_row, target_col = best_move
+        # Apply the move
         distance = max(abs(src_row - target_row), abs(src_col - target_col))
         if distance == 1:
             self.animate_movement(src_row, src_col, target_row, target_col, is_jump=False)
@@ -1042,7 +1090,7 @@ class GameScreen(FloatLayout):
             self.animate_jump(src_row, src_col, target_row, target_col)
 
         # Update the board state
-        self.board_state = self.ai.apply_move(self.board_state, best_move)
+        self.board_state = self.ai.apply_move(self.board_state, move)
 
         # Calculate reward (e.g., difference in piece count)
         reward = self.calculate_reward()
@@ -1050,10 +1098,21 @@ class GameScreen(FloatLayout):
         # Remember the move for learning
         next_state = self.ai.get_state(self.board_state)
         done = self.check_game_end()
-        self.ai.remember(state, best_move, reward, next_state, done)
+        self.ai.remember(state, move, reward, next_state, done)
 
         # Train the model
         self.ai.replay(32)
+
+        result = self.calculate_ai_result()  # Implement this method to determine the AI's performance
+        if self.ai_character:
+            self.ai_character.evaluate_outcome(result)
+    
+    def calculate_ai_result(self):
+        # Implement logic to determine if AI is winning, losing, or drawing
+        ai_pieces = sum(row.count(2) for row in self.board_state)
+        player_pieces = sum(row.count(1) for row in self.board_state)
+        return ai_pieces - player_pieces
+
 
     def get_valid_moves(self):
         valid_moves = []
@@ -1113,6 +1172,7 @@ class GameScreen(FloatLayout):
             # Determine winner by piece count
             winner = 1 if player_1_count > player_2_count else 2
             self.end_game(winner=winner)
+
 
     def has_valid_moves(self, player):
         """Check if the given player has any valid moves."""
@@ -1366,26 +1426,22 @@ class MakeNewLevelScreen(FloatLayout):
         """
         Toggle cell state between:
         0: Empty (Traversable), 1: Player 1 (Blue Circle), 
-        2: Player 2 (Red Circle), 9: Non-Traversable (Gray Block).
+        2: Player 2 (Red Circle), 3: Non-Traversable (Gray Block).
         """
         current_state = self.grid[row][col]
         new_state = (current_state + 1) % 4  # Cycle through states
         self.grid[row][col] = new_state  # Update the grid state
-
-        # Debugging: Print state transition
-        print(f"Cell ({row}, {col}) changed from state {current_state} to {new_state}")
 
         # Calculate cell position
         x = self.grid_x + col * self.cell_size
         y = self.grid_y + row * self.cell_size
         radius = self.cell_size * 0.4
 
-        # Clear only the current cell
         with self.canvas:
             # Clear the specific cell area
             Color(0, 0, 0, 1)  # Black background for clearing
             Rectangle(pos=(x, y), size=(self.cell_size, self.cell_size))
-
+            print(new_state)
             # Draw the new state
             if new_state == 1:  # Player 1 (Blue Circle)
                 Color(0, 0, 1, 1)
@@ -1398,14 +1454,7 @@ class MakeNewLevelScreen(FloatLayout):
             elif new_state == 3:  # Non-Traversable (Gray Block)
                 Color(0.5, 0.5, 0.5, 1)
                 Rectangle(pos=(x, y), size=(self.cell_size, self.cell_size))
-            elif new_state == 0:  # Empty (Traversable)
-                # Clear the cell area and redraw the grid lines
-                Color(0.8, 0.8, 0.8, 1)  # Light gray grid lines
-                Line(points=[x, y, x + self.cell_size, y], width=2)  # Top grid line
-                Line(points=[x, y, x, y + self.cell_size], width=2)  # Left grid line
-                Line(points=[x + self.cell_size, y, x + self.cell_size, y + self.cell_size], width=2)  # Right grid line
-                Line(points=[x, y + self.cell_size, x + self.cell_size, y + self.cell_size], width=2)  # Bottom grid line
-        
+            
         # Play the sound effect
         sound = SoundLoader.load('./sound/change-item.mp3')
         if sound:
