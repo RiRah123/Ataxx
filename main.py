@@ -409,7 +409,7 @@ class GameScreen(FloatLayout):
             text="Player 1",
             font_size="24sp",
             bold=True,
-            color=(1, 0, 0, 1),
+            color=(0, 0, 1, 1),  # Blue
             pos=(grid_x - 250, grid_y + grid_height / 2 + 40),
             size_hint=(None, None),
         )
@@ -436,7 +436,7 @@ class GameScreen(FloatLayout):
             text="Player 2",
             font_size="24sp",
             bold=True,
-            color=(0, 0, 1, 1),
+            color=(1, 0, 0, 1),
             pos=(grid_x + grid_width + 150, grid_y + grid_height / 2 + 40),
             size_hint=(None, None),
         )
@@ -509,13 +509,13 @@ class GameScreen(FloatLayout):
                 elif cell_value == 1:
                     self.board_state[row_idx][col_idx] = 1
                     self.draw_circle(
-                        self.grid_x, self.grid_y, col_idx, row_idx, self.cell_size, (1, 0, 0, 1),
+                        self.grid_x, self.grid_y, col_idx, row_idx, self.cell_size, (0, 0, 1, 1),
                         is_starting_cell=True, owner=1
                     )
                 elif cell_value == 2:
                     self.board_state[row_idx][col_idx] = 2
                     self.draw_circle(
-                        self.grid_x, self.grid_y, col_idx, row_idx, self.cell_size, (0, 0, 1, 1),
+                        self.grid_x, self.grid_y, col_idx, row_idx, self.cell_size, (1, 0, 0, 1),
                         is_starting_cell=True, owner=2
                     )
 
@@ -740,7 +740,7 @@ class GameScreen(FloatLayout):
             self.canvas.remove(glow_circle)
 
     def complete_move(self, src_row, src_col, target_row, target_col, is_jump):
-        color = (1, 0, 0, 1) if self.active_player == 1 else (0, 0, 1, 1)
+        color = (0, 0, 1, 1) if self.active_player == 1 else (1, 0, 0, 1)  # Blue for Player 1, Red for Player 2
         self.draw_circle(self.grid_x, self.grid_y, target_col, target_row, self.cell_size, color)
 
         self.board_state[target_row][target_col] = self.active_player
@@ -762,7 +762,7 @@ class GameScreen(FloatLayout):
 
     def convert_adjacent_pieces(self, row, col):
         opponent = 2 if self.active_player == 1 else 1
-        color = (1, 0, 0, 1) if self.active_player == 1 else (0, 0, 1, 1)
+        color = (0, 0, 1, 1) if self.active_player == 1 else (1, 0, 0, 1)
         directions = [
             (-1, 0),
             (1, 0),
@@ -838,7 +838,7 @@ class GameScreen(FloatLayout):
         target_y = self.grid_y + target_row * self.cell_size + self.cell_size / 2
 
         with self.canvas:
-            Color(1, 0, 0, 1) if self.active_player == 1 else Color(0, 0, 1, 1)
+            Color(0, 0, 1, 1) if self.active_player == 1 else Color(1, 0, 0, 1)
             moving_circle = Ellipse(pos=(target_x - self.cell_size / 4, target_y - self.cell_size / 4),
                                     size=(self.cell_size / 2, self.cell_size / 2))
 
@@ -900,13 +900,13 @@ class GameScreen(FloatLayout):
         if self.active_player == 1:
             self.active_player = 2
             self.player_1_label.color = (0.5, 0.5, 0.5, 1)
-            self.player_2_label.color = (0, 0, 1, 1)
+            self.player_2_label.color = (1, 0, 0, 1)
             if self.is_vs_computer:
                 Clock.schedule_once(lambda dt: self.trigger_ai_move(), 1.5)
         else:
             self.active_player = 1
             self.player_2_label.color = (0.5, 0.5, 0.5, 1)
-            self.player_1_label.color = (1, 0, 0, 1)
+            self.player_1_label.color = (0, 0, 1, 1)
         
         print(f"Active Player: {self.active_player}")    
 
@@ -1084,8 +1084,8 @@ class EndGameScreen(FloatLayout):
         self.add_widget(self.title)
         self.animate_label(self.title, (1, 1, 1, 1), (0.8, 1, 0.8, 1))
 
-        dark_color = (0.5, 0, 0, 1) if winner == 1 else (0, 0, 0.5, 1)
-        light_color = (1, 0, 0, 1) if winner == 1 else (0, 0, 1, 1)
+        dark_color = (0.5, 0, 0, 1) if winner == 2 else (0, 0, 0.5, 1)
+        light_color = (1, 0, 0, 1) if winner == 2 else (0, 0, 1, 1)
         self.winner_label = Label(
             text=f"Player {winner} Wins!",
             font_size="50sp",
@@ -1274,11 +1274,11 @@ class MakeNewLevelScreen(FloatLayout):
             Rectangle(pos=(x, y), size=(self.cell_size, self.cell_size))
             print(new_state)
             if new_state == 1:
-                Color(0, 0, 1, 1)
+                Color(1, 0, 0, 1)
                 Ellipse(pos=(x + self.cell_size / 2 - radius, y + self.cell_size / 2 - radius),
                         size=(radius * 2, radius * 2))
             elif new_state == 2:
-                Color(1, 0, 0, 1)
+                Color(0, 0, 1, 1)
                 Ellipse(pos=(x + self.cell_size / 2 - radius, y + self.cell_size / 2 - radius),
                         size=(radius * 2, radius * 2))
             elif new_state == 3:
