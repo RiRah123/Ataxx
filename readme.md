@@ -1,0 +1,2 @@
+INCLUDE INFORMATION ABOUY NUMPY
+install numpy
