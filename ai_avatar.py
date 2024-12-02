@@ -71,6 +71,7 @@ class AtaxxAI:
             self.model.backward(state, target_f)
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
+            
 class AICharacter:
     def __init__(self, game_screen):
         self.game_screen = game_screen

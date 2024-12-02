@@ -22,6 +22,7 @@ from kivy.clock import Clock
 from ai_avatar import AtaxxAI, AICharacter
 import json
 
+# This class that I created below is responsible for the front screen of the Ataxx game
 class AtaxxStartScreen(BoxLayout):
     settings = {
         "board_level": "Level 1",
@@ -40,6 +41,9 @@ class AtaxxStartScreen(BoxLayout):
         self.load_levels()
         self.mark_start_cells()
 
+        # In order to integrate the grid pattern as part of the game background, I had to refer to the following documentation.
+        # I used this background pretty much in all of the screens and used this source for documentation each time:
+        #  https://stackoverflow.com/questions/67005587/displaying-a-background-image-in-kivy
         with self.canvas.before:
             Color(0, 0, 0, 1)
             self.bg_base = Rectangle(size=self.size, pos=self.pos)
@@ -49,6 +53,9 @@ class AtaxxStartScreen(BoxLayout):
 
         layout = FloatLayout()
 
+        # In order to support the custom font that utilized several times throughout this application,
+        # I referred to the following documentation located below:
+        # https://www.geeksforgeeks.org/how-to-add-custom-fonts-in-kivy-python/
         self.title = Label(
             text="Ataxx",
             font_size="90sp",
@@ -80,6 +87,9 @@ class AtaxxStartScreen(BoxLayout):
 
         self.add_widget(layout)
 
+    # I referred to the following documentation in order to understand how to load a text file 
+    # as a JSON in Python for Kivy:
+    # https://www.geeksforgeeks.org/convert-text-file-to-json-in-python/
     def load_levels(self):
         try:
             with open("levels.txt", "r") as file:
@@ -112,6 +122,9 @@ class AtaxxStartScreen(BoxLayout):
         self.bg_overlay.size = self.size
         self.bg_overlay.pos = self.pos
 
+    # I referred to the following documentation in order to understand how to animate the
+    # title on the front screen for kivy:
+    # https://www.youtube.com/watch?v=i8OU93pHiS0
     def animate_title(self):
         anim = (
             Animation(color=(1, 1, 1, 1), duration=0.7) +
@@ -120,6 +133,10 @@ class AtaxxStartScreen(BoxLayout):
         anim.repeat = True
         anim.start(self.title)
 
+    # I referred to the offical documentation on Kivy buttons in order to understand how 
+    # to have their colors change dynamically throughout the course of the application
+    # and present this to the user. The link to that is located below:
+    # https://kivy.org/doc/stable-2.2.0/api-kivy.uix.button.html
     def create_button(self, text, on_press_callback=None):
         button_layout = BoxLayout(
             size_hint=(0.6, None),
@@ -160,6 +177,9 @@ class AtaxxStartScreen(BoxLayout):
         anim_bg.repeat = True
         anim_bg.start(bg_color)
 
+    # I referred to the documentation below in order to be able to play background music for this application.
+    # I used this documentation several times for the other areas where I needed to use sound 
+    # https://kivy.org/doc/stable-2.2.0/api-kivy.core.audio.html
     def play_background_music(self):
         self.music = SoundLoader.load('./sound/start_screen_music.mp3')
         if self.music:
@@ -171,7 +191,9 @@ class AtaxxStartScreen(BoxLayout):
         else:
             print("Failed to load music.")
 
-
+    # I referred to the offical documentation for the Kivy Popup in order to be able to integrate within my application.
+    # Specifically, I used to understand how other components like a slider or button could be integrated within here
+    # https://kivy.org/doc/stable/api-kivy.uix.popup.html
     def open_config_popup(self, instance):
         popup_layout = BoxLayout(orientation="vertical", spacing=10, padding=10)
 
@@ -232,6 +254,9 @@ class AtaxxStartScreen(BoxLayout):
 
         timer_slider.bind(value=update_slider_label)
 
+        # I referred to the following documentation in order to able to integrate a slider into the
+        # save settings popup where the user can adjust the number of minutes for a given game
+        # https://kivy.org/doc/stable-2.2.0/api-kivy.uix.slider.html
         def toggle_slider(*args):
             if limited_checkbox.active:
                 slider_layout.opacity = 1
@@ -284,6 +309,10 @@ class AtaxxStartScreen(BoxLayout):
         )
         config_popup.open()
     
+    # I had to refer to the documentation of Screen Manager similar to the previous projects in order to understand how to 
+    # navigate to the make new level screen in my game. I also used in other areas of the application as well and kept
+    # referring to this docementation
+    # https://kivy.org/doc/stable/api-kivy.uix.screenmanager.html
     def open_make_new_level_screen(self, instance):
         make_new_level_screen = Screen(name="make_new_level_screen")
         make_new_level_screen.add_widget(MakeNewLevelScreen(self))
@@ -291,7 +320,6 @@ class AtaxxStartScreen(BoxLayout):
         self.screen_manager.current = "make_new_level_screen"
     
     def reload_board_spinner_values(self, board_spinner):
-        """Reload the spinner's values dynamically after levels are updated."""
         self.load_levels()
         board_spinner.values = [level["name"] for level in self.levels]
 
@@ -321,13 +349,14 @@ class AtaxxStartScreen(BoxLayout):
         print("Exiting the game...")
         App.get_running_app().stop()
 
+# This class is responsible for implementing the game logic on the board for the Ataxx game
 class GameScreen(FloatLayout):
     def __init__(self, selected_level, settings, is_vs_computer=False, **kwargs):
         super().__init__(**kwargs)
         self.circle_references = {}
         self.selected_circle = None
         self.ai_character = None
-
+        
         self.is_vs_computer = is_vs_computer
         self.settings = settings
         if self.settings["timer_mode"] == "Limited":
@@ -369,6 +398,10 @@ class GameScreen(FloatLayout):
         self.player_1_count = sum(cell == 1 for row in selected_level["board"] for cell in row)
         self.player_2_count = sum(cell == 2 for row in selected_level["board"] for cell in row)
 
+        # I referred to the following Youtube Tutorial in order to understand how to have dynamic
+        # labels that change consistently throughout the course of my Kivy game. Both of these labels
+        # were applied to update the number of pieces for player 1 and player 2 on the board
+        # https://www.youtube.com/watch?v=7Sks1Ld1DWY
         self.player_1_label = Label(
             text="Player 1",
             font_size="24sp",
@@ -423,6 +456,8 @@ class GameScreen(FloatLayout):
         self.add_widget(self.player_2_piece_count)
         self.add_widget(self.player_2_timer)
 
+        # I had to refer to the offical Kivy documentation in order to understand how to draw the lines
+        # that were necessary for this game such that they were a in grid based format
         with self.canvas:
             Color(0.8, 0.8, 0.8, 1)
             for i in range(rows + 1):
@@ -442,6 +477,10 @@ class GameScreen(FloatLayout):
 
         self.timer_event = Clock.schedule_interval(self.update_timer, 1)
         
+        # I used the is_vs_computer tracker numerous time through the application to determine whether
+        # or not the user was in the player vs computer mode. If they were in that mode, then it
+        # the appropiate ai related components of the game are introduced like the AI character
+        # below
         if self.is_vs_computer:
             self.ai_character = AICharacter(self)
 
@@ -483,6 +522,11 @@ class GameScreen(FloatLayout):
         self.bg_overlay.size = self.size
         self.bg_overlay.pos = self.pos
 
+    # I referred to the following documentation that shows how to build an array based
+    # grid in Python and how it can be clicked upon throughout the course of the application.
+    # I used this documentation as a source in order to understand how to create a similar
+    # grid based structure for this game in Kivy
+    # https://learn.arcade.academy/en/latest/chapters/28_array_backed_grids/array_backed_grids.html
     def create_cell_widget(self, row, col, cell_size, grid_x, grid_y):
         cell_value = self.board_state[row][col]
         if cell_value == 9:
@@ -504,6 +548,9 @@ class GameScreen(FloatLayout):
             Color(0.2, 0.6, 0.2, 0.5)
             RoundedRectangle(size=cell_button.size, pos=cell_button.pos, radius=[10])
 
+        # I referred to the following documentation in order understand how to have
+        # a mouse hover effect for the appropiate traversable cells in Kivy
+        # https://stackoverflow.com/questions/58190402/implement-a-kivy-button-mouseover-event
         def hover_effect(instance, touch):
             if instance.collide_point(*touch.pos):
                 instance.canvas.before.clear()
@@ -522,6 +569,9 @@ class GameScreen(FloatLayout):
         self.add_widget(cell_button)
         return cell_button
 
+    # I referred to the following Stack Over flow post in order to understand how to draw
+    # the appropiate circle within my Kivy application
+    # https://stackoverflow.com/questions/72118415/kivy-draw-circle-to-middle-of-screen-on-startup
     def draw_circle(self, grid_x, grid_y, col, row, cell_size, color, is_starting_cell=False, owner=None):
         center_x = grid_x + col * cell_size + cell_size / 2
         center_y = grid_y + row * cell_size + cell_size / 2
@@ -543,15 +593,16 @@ class GameScreen(FloatLayout):
         }
 
     def format_time(self, time_seconds):
-        """Format time as MM:SS or 'Unlimited'."""
         if time_seconds is None:
             return ""
         minutes = time_seconds // 60
         seconds = time_seconds % 60
         return f"{minutes:02}:{seconds:02}"
 
+    # I referred to the following Stack Over flow post in order to understand 
+    # how to implement the timers for each player in Kivy and have them be
+    # delivered to the user at the begining of the game
     def update_timer(self, dt):
-        """Update the active player's timer."""        
         if self.settings["timer_mode"] == "Unlimited":
             return
         
@@ -613,7 +664,14 @@ class GameScreen(FloatLayout):
             self.remove_valid_cell_glow()
             self.selected_circle = None
 
+    # I have to refer to the Kivy doucmentation on graphics in order to understand how to
+    # display the tranversable cells for a praticular circle upon clicking it
+    # https://kivy.org/doc/stable/api-kivy.graphics.html
     def add_valid_cell_glow(self, row, col):
+        # I created this array in order to store all the references for the 
+        # expandable tranversable cells so that I could display theme at ease
+        # for a praticular instance of a clicked circle and then removing those
+        # cells later on
         self.valid_glow_references = []
 
         for target_row in range(self.rows):
@@ -643,6 +701,10 @@ class GameScreen(FloatLayout):
 
         self.valid_glow_references = []
 
+    # I had to refer to the following stackover flow on eclipse in order
+    # to understand how to have the current active circle for a praticular
+    # player be visually glowed on screen
+    # https://kivy.org/doc/stable/api-kivy.graphics.html
     def add_glow_effect(self, row, col):
         references = self.circle_references.get((row, col))
         if not references:
@@ -724,21 +786,6 @@ class GameScreen(FloatLayout):
                 sound.volume = 0.5
                 sound.play()
 
-    def animate_piece_conversion(self, row, col, target_color):
-        references = self.circle_references.get((row, col))
-        if not references:
-            return 
-
-        color_instruction = references['color']
-
-        anim = Animation(r=target_color[0], g=target_color[1], b=target_color[2], a=target_color[3], duration=0.5)
-        
-        def finalize_conversion(*_):
-            color_instruction.rgba = target_color
-
-        anim.bind(on_complete=finalize_conversion)
-        anim.start(color_instruction)
-
     def clear_cell(self, row, col):
         if (row, col) in self.circle_references:
             references = self.circle_references.pop((row, col))
@@ -759,6 +806,26 @@ class GameScreen(FloatLayout):
             Rectangle(pos=(cell_x, cell_y), size=(self.cell_size, self.cell_size))
 
         self.canvas.ask_update()
+    
+    # I referred to the documentation on animation from Kivy in order to understand how to implement
+    # the animation for the animate_piece_conversion, animate_movement, and animate_jump
+    # that are located below. I used components of the grid based structure in order to 
+    # integrate it withinthe Kivy animation
+    # https://kivy.org/doc/stable/api-kivy.animation.html
+    def animate_piece_conversion(self, row, col, target_color):
+        references = self.circle_references.get((row, col))
+        if not references:
+            return 
+
+        color_instruction = references['color']
+
+        anim = Animation(r=target_color[0], g=target_color[1], b=target_color[2], a=target_color[3], duration=0.5)
+        
+        def finalize_conversion(*_):
+            color_instruction.rgba = target_color
+
+        anim.bind(on_complete=finalize_conversion)
+        anim.start(color_instruction)
 
     def animate_movement(self, src_row, src_col, target_row, target_col, is_jump=False):
         target_x = self.grid_x + target_col * self.cell_size + self.cell_size / 2
@@ -829,6 +896,10 @@ class GameScreen(FloatLayout):
         anim.bind(on_complete=finalize_jump)
         anim.start(jumping_circle)
 
+    # I referred to the following red post in order to easily be able to implement the 
+    # two player functionality in this game and have the player be able to switch
+    # their turns:
+    # https://www.reddit.com/r/learnprogramming/comments/17cvdx/python_how_do_i_swap_players_in_a_2player_game/
     def switch_turn(self):
         if self.active_player == 1:
             self.active_player = 2
@@ -859,6 +930,10 @@ class GameScreen(FloatLayout):
             self.switch_turn()
             return
 
+        # I had to refer to the following documentation in order to implement the AI mechansim of the avatar
+        # where I built a simple neural network architecture in a manner that it selects the move which maximizes 
+        # the positive difference in the total pieces between the two teams
+        # https://medium.com/technology-invention-and-more/how-to-build-a-simple-neural-network-in-9-lines-of-python-code-cc8f23647ca1
         move = self.ai.get_action(state, valid_moves)
         src_row, src_col, target_row, target_col = move
 
@@ -886,8 +961,11 @@ class GameScreen(FloatLayout):
         ai_pieces = sum(row.count(2) for row in self.board_state)
         player_pieces = sum(row.count(1) for row in self.board_state)
         return ai_pieces - player_pieces
-
-
+    
+    # I had to refer to the documentation on Attax to understand what the valid
+    # moves where for this game and be able to implement in a grid base approach
+    # as you can see below
+    # http://www.linuxonly.nl/docs/4/0_Ataxx.html
     def get_valid_moves(self):
         valid_moves = []
         directions = [
@@ -918,6 +996,9 @@ class GameScreen(FloatLayout):
         self.player_1_piece_count.text = f"Pieces: {player_1_count}"
         self.player_2_piece_count.text = f"Pieces: {player_2_count}"
     
+    # I had to refer to these rules set for Attax to understand the various different
+    # winning conditions for Attax and be able to implement it within this game:
+    # https://skatgame.net/mburo/ggsa/ax.rules
     def check_game_end(self):
         player_1_count = sum(cell == 1 for row in self.board_state for cell in row)
         player_2_count = sum(cell == 2 for row in self.board_state for cell in row)
@@ -992,6 +1073,9 @@ class EndGameScreen(FloatLayout):
             self.bg_overlay = Rectangle(size=self.size, pos=self.pos, source="./image/grid_pattern.jpg")
         self.bind(size=self._update_bg, pos=self._update_bg)
 
+        # Similar to beforen, I referred to the following documentation located below 
+        # to support the custom font that utilized several times throughout this application:
+        # https://www.geeksforgeeks.org/how-to-add-custom-fonts-in-kivy-python/
         self.title = Label(
             text="Game Over",
             font_size="90sp",
@@ -1018,6 +1102,10 @@ class EndGameScreen(FloatLayout):
         self.add_widget(self.winner_label)
         self.animate_label(self.winner_label, light_color, dark_color)
 
+        # I had to refer Clock Kivy documentation again to have a countdown for 
+        # returning back to the start screen after a selected period of time on the
+        # main screen
+        # https://kivy.org/doc/stable/api-kivy.clock.html
         self.timer_label = Label(
             text=f"Returning to the main start screen in {self.remaining_time} seconds",
             font_size="20sp",
@@ -1091,6 +1179,13 @@ class MakeNewLevelScreen(FloatLayout):
         self.bg_overlay.size = self.size
         self.bg_overlay.pos = self.pos
     
+    # I had to refer to the following documentation in order to understand how to
+    # implement a popup menu for the start of the make a level screen
+    # https://www.google.com//search?udm=14&q=kivy+popup
+    #
+    # I had to refer to the following documentation as well to have it be implemented
+    # within a Box Layout structure:
+    # https://kivy.org/doc/stable/api-kivy.uix.boxlayout.html
     def show_description_popup(self):
         content = BoxLayout(orientation="vertical", padding=20, spacing=10)
         instructions = Label(
@@ -1135,8 +1230,11 @@ class MakeNewLevelScreen(FloatLayout):
 
         popup.open()
 
+    # I referred to this documentation on Kivy's page on Line in order to understand how to 
+    # draw a grid based line to before but this time with glowing. I added this to the 
+    # Make a New Level Screen:
+    # https://kivy.org/doc/stable/examples/gen__canvas__lines_extended__py.html
     def draw_grid_with_lighting(self):
-        """Draw the grid lines with a light green glow effect."""
         with self.canvas:
             Color(0.1, 1, 0.1, 0.2)
             for i in range(self.rows + 1):
@@ -1203,6 +1301,10 @@ class MakeNewLevelScreen(FloatLayout):
             Color(0, 0, 0, 0)
             Rectangle(pos=(x, y), size=(self.cell_size, self.cell_size))
 
+    # Like before on the title screen, I had to refer to the offical documentation on Kivy 
+    # buttons  in order to understand how to have their colors change dynamically 
+    # on this page. The link to that is located below:
+    # https://kivy.org/doc/stable-2.2.0/api-kivy.uix.button.html
     def create_button(self, text, callback, x_position):
         button_layout = BoxLayout(
             size_hint=(None, None),
@@ -1290,7 +1392,14 @@ class MakeNewLevelScreen(FloatLayout):
         else:
             print("Failed to load sound: change-item.mp3")
 
-
+    # I had to refer to the offical kivy documentation on how to 
+    # be able have the save level popup appear for the user
+    # on the screen. Here is the documentation to that
+    # https://kivy.org/doc/stable/api-kivy.uix.popup.html
+    #
+    # I also had to refer to the text inut documentation
+    # to have the user save the name level
+    # https://kivy.org/doc/stable/api-kivy.uix.textinput.html
     def open_save_level_popup(self):
         content = BoxLayout(orientation="vertical", spacing=10)
 
@@ -1327,6 +1436,9 @@ class MakeNewLevelScreen(FloatLayout):
             converted_grid = [[9 if cell == 3 else cell for cell in row] for row in self.grid]
             new_level = {"name": level_name, "size": [self.rows, self.cols], "board": converted_grid}
 
+            # I had to refer to the following documentation to understand how to
+            # append and write to the levels.txt file with the level created
+            # https://stackoverflow.com/questions/21763772/how-to-write-and-save-into-a-text-file-from-textinput-using-kivy
             try:
                 with open("levels.txt", "r") as file:
                     levels = json.loads(file.read())
@@ -1345,6 +1457,10 @@ class MakeNewLevelScreen(FloatLayout):
         save_button.bind(on_press=save_level_to_file)
         popup.open()
     
+    # I had to refer to the following documentation again in order to understand how to
+    # implement a popup menu for the start of the make a level screen.
+    # This time I wanted to use it for creating the success menu on the game
+    # https://www.google.com//search?udm=14&q=kivy+popup
     def show_success_popup(self, level_name):
         content = BoxLayout(orientation="vertical", spacing=10, padding=10)
         success_message = (
