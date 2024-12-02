@@ -1017,10 +1017,24 @@ class GameScreen(FloatLayout):
             self.switch_turn()
             return
 
-        move = self.ai.get_action(state, valid_moves)
-        src_row, src_col, target_row, target_col = move
+        # Select move that maximizes the difference in total pieces
+        best_move = None
+        best_difference = -float('inf')
 
-        # Apply the move
+        for move in valid_moves:
+            # Simulate the move 
+            new_state = self.ai.apply_move(state.reshape(self.rows, self.cols), move)
+            ai_pieces = np.sum(new_state == 2)
+            player_pieces = np.sum(new_state == 1)
+            difference = ai_pieces - player_pieces
+
+            # Check if this move is the best one
+            if difference > best_difference:
+                best_difference = difference
+                best_move = move
+
+        # Apply the best move found
+        src_row, src_col, target_row, target_col = best_move
         distance = max(abs(src_row - target_row), abs(src_col - target_col))
         if distance == 1:
             self.animate_movement(src_row, src_col, target_row, target_col, is_jump=False)
@@ -1028,7 +1042,7 @@ class GameScreen(FloatLayout):
             self.animate_jump(src_row, src_col, target_row, target_col)
 
         # Update the board state
-        self.board_state = self.ai.apply_move(self.board_state, move)
+        self.board_state = self.ai.apply_move(self.board_state, best_move)
 
         # Calculate reward (e.g., difference in piece count)
         reward = self.calculate_reward()
@@ -1036,11 +1050,10 @@ class GameScreen(FloatLayout):
         # Remember the move for learning
         next_state = self.ai.get_state(self.board_state)
         done = self.check_game_end()
-        self.ai.remember(state, move, reward, next_state, done)
+        self.ai.remember(state, best_move, reward, next_state, done)
 
         # Train the model
         self.ai.replay(32)
-
 
     def get_valid_moves(self):
         valid_moves = []
