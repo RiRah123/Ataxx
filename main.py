@@ -94,7 +94,10 @@ class AtaxxStartScreen(BoxLayout):
         try:
             with open("levels.txt", "r") as file:
                 self.levels = json.load(file)
-                print("Levels loaded successfully:", self.levels)
+            for level in self.levels:
+                if not level.get("generated", False):
+                    level["board"] = level["board"][::-1]
+            print("Levels loaded successfully:", self.levels)
         except FileNotFoundError:
             print("Error: levels.txt file not found.")
             self.levels = []
@@ -577,6 +580,9 @@ class GameScreen(FloatLayout):
         center_y = grid_y + row * cell_size + cell_size / 2
         radius = cell_size * 0.4
 
+        # Clear existing circle if any
+        self.clear_cell(row, col)
+
         with self.canvas:
             shadow_color = Color(0, 0, 0, 0.5)
             shadow = Ellipse(pos=(center_x - radius - 5, center_y - radius - 5), size=(radius * 2, radius * 2))
@@ -591,7 +597,7 @@ class GameScreen(FloatLayout):
             'is_starting_cell': is_starting_cell,
             'owner': owner
         }
-
+        
     def format_time(self, time_seconds):
         if time_seconds is None:
             return ""
@@ -870,32 +876,22 @@ class GameScreen(FloatLayout):
         )
 
         def finalize_jump(*_):
-            current_references = self.circle_references.get((src_row, src_col))
-            if current_references:
-                current_color = current_references['color']
-                current_owner = current_references['owner']
-                if (
-                    current_owner == src_owner
-                    and current_color.rgba == src_color.rgba
-                ):
-                    self.clear_cell(src_row, src_col)
-                else:
-                    print(
-                        f"Skipping removal: Owner or color mismatch for circle at "
-                        f"({src_row}, {src_col}). Expected color: {src_color.rgba}, "
-                        f"Found color: {current_color.rgba}."
-                    )
-            else:
-                print(f"No current references found at ({src_row}, {src_col}).")
+            # Clear the source cell
+            self.clear_cell(src_row, src_col)
 
+            # Remove the temporary jumping circle
             if jumping_circle in self.canvas.children:
                 self.canvas.remove(jumping_circle)
+
+            # Check if the source was an adjacent clone and clear it if necessary
+            if not references.get('is_starting_cell', False):
+                self.board_state[src_row][src_col] = 0
 
             self.complete_move(src_row, src_col, target_row, target_col, is_jump=True)
 
         anim.bind(on_complete=finalize_jump)
-        anim.start(jumping_circle)
-
+        anim.start(jumping_circle)    
+    
     # I referred to the following red post in order to easily be able to implement the 
     # two player functionality in this game and have the player be able to switch
     # their turns:
@@ -1434,7 +1430,7 @@ class MakeNewLevelScreen(FloatLayout):
                 return
 
             converted_grid = [[9 if cell == 3 else cell for cell in row] for row in self.grid]
-            new_level = {"name": level_name, "size": [self.rows, self.cols], "board": converted_grid}
+            new_level = {"name": level_name, "size": [self.rows, self.cols], "board": converted_grid, "generated": True}
 
             # I had to refer to the following documentation to understand how to
             # append and write to the levels.txt file with the level created
@@ -1459,7 +1455,7 @@ class MakeNewLevelScreen(FloatLayout):
     
     # I had to refer to the following documentation again in order to understand how to
     # implement a popup menu for the start of the make a level screen.
-    # This time I wanted to use it for creating the success menu on the game
+    # This time I wanted to use it for creating the success menu on the
     # https://www.google.com//search?udm=14&q=kivy+popup
     def show_success_popup(self, level_name):
         content = BoxLayout(orientation="vertical", spacing=10, padding=10)
