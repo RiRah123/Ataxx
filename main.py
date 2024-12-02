@@ -1319,11 +1319,11 @@ class MakeNewLevelScreen(FloatLayout):
             Rectangle(pos=(x, y), size=(self.cell_size, self.cell_size))
             print(new_state)
             if new_state == 1:
-                Color(1, 0, 0, 1)
+                Color(0, 0, 1, 1)
                 Ellipse(pos=(x + self.cell_size / 2 - radius, y + self.cell_size / 2 - radius),
                         size=(radius * 2, radius * 2))
             elif new_state == 2:
-                Color(0, 0, 1, 1)
+                Color(1, 0, 0, 1)
                 Ellipse(pos=(x + self.cell_size / 2 - radius, y + self.cell_size / 2 - radius),
                         size=(radius * 2, radius * 2))
             elif new_state == 3:
@@ -1609,7 +1609,7 @@ class AtaxxAI:
     def apply_move(self, state, move):
         src_row, src_col, target_row, target_col = move
         new_state = state.copy()
-        new_state[target_row][target_col] = 2  # AI player
+        new_state[target_row][target_col] = 2
         if max(abs(src_row - target_row), abs(src_col - target_col)) == 2:
             new_state[src_row][src_col] = 0
         return new_state
@@ -1641,7 +1641,8 @@ class AICharacter:
         }
         self.sounds = {
             'happy': './sound/bot/happy.mp3',
-            'sad': './sound/bot/sad.mp3'
+            'sad': './sound/bot/sad.mp3',
+            'neutral': './sound/bot/neutral.mp3',
         }
         self.current_emotion = 'neutral'
         self.image_widget = Image(source=self.images['neutral'])
@@ -1670,6 +1671,7 @@ class AICharacter:
                 sound.play()
 
     def evaluate_outcome(self, result):
+        print(result)
         if result > 0:  # AI wins
             self.change_emotion('happy')
         elif result < 0:  # AI loses
