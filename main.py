@@ -32,6 +32,7 @@ class AtaxxStartScreen(BoxLayout):
         "play_mode": "Player vs Player",
         "timer_mode": "Unlimited",
         "timer_minutes": 5,
+        "show_instructions": True,
     }
     levels = []
 
@@ -490,6 +491,8 @@ class GameScreen(FloatLayout):
         if self.is_vs_computer:
             self.ai_character = AICharacter(self)
 
+        Clock.schedule_once(lambda dt: self.show_instructions_popup(), 0.5)
+
 
     def reset_game(self, selected_level):
         for (row, col) in list(self.circle_references.keys()):
@@ -521,6 +524,53 @@ class GameScreen(FloatLayout):
                         self.grid_x, self.grid_y, col_idx, row_idx, self.cell_size, (1, 0, 0, 1),
                         is_starting_cell=True, owner=2
                     )
+
+    def show_instructions_popup(self):
+        if not self.settings.get("show_instructions", True):
+            return
+        popup_layout = BoxLayout(orientation="vertical", spacing=10, padding=20)
+        
+        instructions = (
+            "Ataxx Instructions:\n\n"
+            "1. Click on your piece to select it.\n"
+            "2. Click on a valid destination to move:\n"
+            "   - Adjacent cell: Grow a new piece\n"
+            "   - Two squares away: Jump the piece\n"
+            "   - Clicking elsewhere unselects the piece.\n"
+            "3. Landing next to opponent pieces converts them.\n"
+            "4. Game ends when no moves are possible.\n"
+            "5. Player with the most pieces wins.\n\n"
+        )
+        
+        popup_layout.add_widget(Label(
+            text=instructions,
+            font_size="16sp",
+            color=(1, 1, 1, 1),
+            halign="left",
+            valign="top",
+        ))
+        
+        close_button = Button(
+            text="Got it!",
+            size_hint=(1, None),
+            height=50,
+            background_color=(0.2, 0.8, 0.2, 1)
+        )
+        popup_layout.add_widget(close_button)
+        
+        popup = Popup(
+            title="How to Play",
+            content=popup_layout,
+            size_hint=(0.8, 0.8),
+            auto_dismiss=False
+        )
+        def disable_future_popups(instance):
+            self.settings["show_instructions"] = False
+            popup.dismiss()
+            
+        close_button.bind(on_press=disable_future_popups)
+        close_button.bind(on_press=popup.dismiss)
+        popup.open()
 
     def _update_bg(self, *args):
         self.bg_base.size = self.size

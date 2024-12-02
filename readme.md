@@ -12,6 +12,13 @@ You need to install numpy for this application because I needed it for the AI mo
 pip install numpy
 ```
 
+## Bugs
+
+### With Moving Cloning and Then Jumping
+
+- There is a visual bug in my program that I couldn't fix where performing an adjacent move to clone a piece and then following it by a jum, a smaller version of the original cloned circle remains on the canvas. I could not figure on why this drawn on the canvas because for normal jumps (where who do not jump from cloned circle it works properly).
+- Although this smaller cloned circle appears, it is only a visual that does not affect of the game functionality. The small circle is not recognized as a valid game piece and tranversable move during the game.
+
 ## Extra Credit Features
 
 I implemented the following extra credit features:
@@ -19,22 +26,15 @@ I implemented the following extra credit features:
 ### AI Avatar with Vocalized Feedback
 
 - Added a Player vs Computer mode which you can access through the settings menu.
-- The AI opponent uses a trained **SimpleNet** model to select moves that maximize the positive difference in total pieces between the two teams.
-- AI moves are accompanied by vocalized feedback for enhanced interactivity.
+- I used a **SimpleNet** model help select moves that maximize the positive difference in total pieces between the two teams.
+  -I added vocalized feedback where the Computer responds with happy or sad voice message.
 
 ### Level Creation Tool
 
-- Developed a level creation tool that allows users to design custom game boards.
-- Features include:
-  - Clicking on cells to cycle between Player 1, Player 2, and Player 3 pieces.
+- Developed a level creation tool that accessible with a button on the front page where users can create their own levels
+- This feature involves:
+  - Clicking on cells to cycle between Player 1, Player 2, and Untraversable Cells.
   - Assigning a title name to the level.
-  - Saving the custom level configuration to the local system for future use.
+  - Saving the custom level configuration onto the levels.txt
 
 ---
-
-## Bugs
-
-### Cloned Circle Artifact
-
-- When performing an adjacent move to clone a piece, followed by a jump, a smaller version of the cloned circle may remain on the canvas.
-- This artifact is purely visual and does not affect game functionality, as the small circle is not recognized as a valid game piece.
