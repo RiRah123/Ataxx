@@ -18,7 +18,78 @@ from kivy.core.audio import SoundLoader
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.textinput import TextInput
 from kivy.clock import Clock
+import numpy as np
+import random
+from collections import deque
 import json
+
+class SimpleNN:
+    def __init__(self, input_size, hidden_size, output_size):
+        self.w1 = np.random.randn(input_size, hidden_size) / np.sqrt(input_size)
+        self.w2 = np.random.randn(hidden_size, output_size) / np.sqrt(hidden_size)
+
+    def forward(self, x):
+        self.z1 = np.dot(x, self.w1)
+        self.a1 = np.tanh(self.z1)
+        self.z2 = np.dot(self.a1, self.w2)
+        return self.z2
+
+    def backward(self, x, y, learning_rate=0.01):
+        self.forward(x)
+        delta2 = self.z2 - y
+        delta1 = np.dot(delta2, self.w2.T) * (1 - np.tanh(self.z1)**2)
+        self.w2 -= learning_rate * np.outer(self.a1, delta2)
+        self.w1 -= learning_rate * np.outer(x, delta1)
+
+class AtaxxAI:
+    def __init__(self, rows, cols):
+        self.rows = rows
+        self.cols = cols
+        self.model = SimpleNN(rows * cols, 64, 1)
+        self.memory = deque(maxlen=10000)
+        self.epsilon = 1.0
+        self.epsilon_min = 0.01
+        self.epsilon_decay = 0.995
+        self.gamma = 0.95
+
+    def get_state(self, board_state):
+        return np.array(board_state).flatten()
+
+    def get_action(self, state, valid_moves):
+        if np.random.rand() <= self.epsilon:
+            return random.choice(valid_moves)
+        
+        q_values = []
+        for move in valid_moves:
+            next_state = self.apply_move(state.reshape(self.rows, self.cols), move)
+            q_values.append(self.model.forward(next_state.flatten()))
+        
+        return valid_moves[np.argmax(q_values)]
+
+    def apply_move(self, state, move):
+        src_row, src_col, target_row, target_col = move
+        new_state = state.copy()
+        new_state[target_row][target_col] = 2  # AI player
+        if max(abs(src_row - target_row), abs(src_col - target_col)) == 2:
+            new_state[src_row][src_col] = 0
+        return new_state
+
+    def remember(self, state, action, reward, next_state, done):
+        self.memory.append((state, action, reward, next_state, done))
+
+    def replay(self, batch_size):
+        if len(self.memory) < batch_size:
+            return
+        minibatch = random.sample(self.memory, batch_size)
+        for state, action, reward, next_state, done in minibatch:
+            target = reward
+            if not done:
+                target = reward + self.gamma * np.max(self.model.forward(next_state))
+            target_f = self.model.forward(state)
+            target_f[0] = target
+            self.model.backward(state, target_f)
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
 
 class AtaxxStartScreen(BoxLayout):
     settings = {
@@ -44,7 +115,7 @@ class AtaxxStartScreen(BoxLayout):
             self.bg_base = Rectangle(size=self.size, pos=self.pos)
 
             Color(0.1, 0.5, 0.1, 1)  # Green overlay
-            self.bg_overlay = Rectangle(size=self.size, pos=self.pos, source="grid_pattern.jpg")
+            self.bg_overlay = Rectangle(size=self.size, pos=self.pos, source="./image/grid_pattern.jpg")
 
         self.bind(size=self._update_bg, pos=self._update_bg)
 
@@ -314,17 +385,20 @@ class AtaxxStartScreen(BoxLayout):
             print(f"Error: Level '{selected_level_name}' not found!")
             return
 
+        # Check if the game is against the computer
+        is_vs_computer = self.settings["play_mode"] == "Player vs Computer"
+
         # Check if the game screen already exists
         existing_game_screen = self.screen_manager.get_screen("game_screen") if "game_screen" in self.screen_manager.screen_names else None
 
         if existing_game_screen:
             print("Resetting existing game screen...")
             existing_game_screen.clear_widgets()  # Clear widgets from the screen
-            existing_game_screen.add_widget(GameScreen(selected_level, self.settings))  # Add a new game instance
+            existing_game_screen.add_widget(GameScreen(selected_level, self.settings, is_vs_computer))  # Add a new game instance
         else:
             print("Starting new game screen...")
             game_screen = Screen(name="game_screen")
-            game_screen.add_widget(GameScreen(selected_level, self.settings))  # Create and add a new game screen
+            game_screen.add_widget(GameScreen(selected_level, self.settings, is_vs_computer))  # Create and add a new game screen
             self.screen_manager.add_widget(game_screen)
 
         # Transition to the game screen
@@ -335,12 +409,13 @@ class AtaxxStartScreen(BoxLayout):
         App.get_running_app().stop()
 
 class GameScreen(FloatLayout):
-    def __init__(self, selected_level, settings, **kwargs):
+    def __init__(self, selected_level, settings, is_vs_computer=False, **kwargs):
         super().__init__(**kwargs)
         self.circle_references = {}
         self.selected_circle = None  # Stores the coordinates of the selected circle
 
         # Extract timer settings from the passed configuration
+        self.is_vs_computer = is_vs_computer  # Flag for AI mode
         self.settings = settings
         if self.settings["timer_mode"] == "Limited":
             self.player_1_time = self.settings["timer_minutes"] * 60  # Convert minutes to seconds
@@ -379,7 +454,7 @@ class GameScreen(FloatLayout):
             self.bg_base = Rectangle(size=self.size, pos=self.pos)
 
             Color(0.1, 0.5, 0.1, 1)  # Green overlay
-            self.bg_overlay = Rectangle(size=self.size, pos=self.pos, source="grid_pattern.jpg")
+            self.bg_overlay = Rectangle(size=self.size, pos=self.pos, source="./image/grid_pattern.jpg")
 
         self.bind(size=self._update_bg, pos=self._update_bg)
 
@@ -842,9 +917,9 @@ class GameScreen(FloatLayout):
 
     def animate_jump(self, src_row, src_col, target_row, target_col):
         """Animate a jump based on the selected circle."""
-        if self.selected_circle is None or (src_row, src_col) != self.selected_circle:
-            print("Error: The source circle does not match the selected circle.")
-            return
+        # if self.selected_circle is None or (src_row, src_col) != self.selected_circle:
+        #     print("Error: The source circle does not match the selected circle.")
+        #     return
 
         # Retrieve the source circle's reference
         references = self.circle_references.get((src_row, src_col))
@@ -915,6 +990,8 @@ class GameScreen(FloatLayout):
             # Update label colors
             self.player_1_label.color = (0.5, 0.5, 0.5, 1)  # Dim Player 1
             self.player_2_label.color = (0, 0, 1, 1)  # Highlight Player 2
+            if self.is_vs_computer:
+                Clock.schedule_once(lambda dt: self.trigger_ai_move(), 1.5)
         else:
             self.active_player = 1
             # Update label colors
@@ -922,8 +999,73 @@ class GameScreen(FloatLayout):
             self.player_1_label.color = (1, 0, 0, 1)  # Highlight Player 1
         
         # Debug: Print the current active player for verification
-        print(f"Active Player: {self.active_player}")
-    
+        print(f"Active Player: {self.active_player}")    
+
+    def trigger_ai_move(self):
+        if not hasattr(self, 'ai'):
+            self.ai = AtaxxAI(self.rows, self.cols)
+
+        if self.active_player != 2:
+            print("It's not the AI's turn.")
+            return
+
+        state = self.ai.get_state(self.board_state)
+        valid_moves = self.get_valid_moves()
+        
+        if not valid_moves:
+            print("AI has no valid moves.")
+            self.switch_turn()
+            return
+
+        move = self.ai.get_action(state, valid_moves)
+        src_row, src_col, target_row, target_col = move
+
+        # Apply the move
+        distance = max(abs(src_row - target_row), abs(src_col - target_col))
+        if distance == 1:
+            self.animate_movement(src_row, src_col, target_row, target_col, is_jump=False)
+        elif distance == 2:
+            self.animate_jump(src_row, src_col, target_row, target_col)
+
+        # Update the board state
+        self.board_state = self.ai.apply_move(self.board_state, move)
+
+        # Calculate reward (e.g., difference in piece count)
+        reward = self.calculate_reward()
+
+        # Remember the move for learning
+        next_state = self.ai.get_state(self.board_state)
+        done = self.check_game_end()
+        self.ai.remember(state, move, reward, next_state, done)
+
+        # Train the model
+        self.ai.replay(32)
+
+
+    def get_valid_moves(self):
+        valid_moves = []
+        directions = [
+            (-1, 0), (1, 0), (0, -1), (0, 1),
+            (-2, 0), (2, 0), (0, -2), (0, 2),
+            (-1, -1), (-1, 1), (1, -1), (1, 1),
+            (-2, -2), (-2, 2), (2, -2), (2, 2)
+        ]
+        
+        for row in range(self.rows):
+            for col in range(self.cols):
+                if self.board_state[row][col] == 2:  # AI's pieces
+                    for d_row, d_col in directions:
+                        target_row, target_col = row + d_row, col + d_col
+                        if 0 <= target_row < self.rows and 0 <= target_col < self.cols:
+                            if self.board_state[target_row][target_col] == 0:
+                                valid_moves.append((row, col, target_row, target_col))
+        return valid_moves
+
+    def calculate_reward(self):
+        ai_pieces = sum(row.count(2) for row in self.board_state)
+        player_pieces = sum(row.count(1) for row in self.board_state)
+        return ai_pieces - player_pieces
+
     def update_piece_counts(self):
         """Update the piece count labels for each player."""
         player_1_count = sum(cell == 1 for row in self.board_state for cell in row)
@@ -1010,7 +1152,7 @@ class EndGameScreen(FloatLayout):
             Color(0, 0, 0, 1)
             self.bg_base = Rectangle(size=self.size, pos=self.pos)
             Color(0.1, 0.5, 0.1, 1)
-            self.bg_overlay = Rectangle(size=self.size, pos=self.pos, source="grid_pattern.jpg")
+            self.bg_overlay = Rectangle(size=self.size, pos=self.pos, source="./image/grid_pattern.jpg")
         self.bind(size=self._update_bg, pos=self._update_bg)
 
         # Game Over Label
@@ -1092,7 +1234,7 @@ class MakeNewLevelScreen(FloatLayout):
             Color(0, 0, 0, 1)  # Black base
             self.bg_base = Rectangle(size=self.size, pos=self.pos)
             Color(0.1, 0.5, 0.1, 1)  # Green overlay
-            self.bg_overlay = Rectangle(size=self.size, pos=self.pos, source="grid_pattern.jpg")
+            self.bg_overlay = Rectangle(size=self.size, pos=self.pos, source="./image/grid_pattern.jpg")
         self.bind(size=self._update_bg, pos=self._update_bg)
 
         # Calculate grid dimensions and positioning
