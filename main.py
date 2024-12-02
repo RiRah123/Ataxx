@@ -211,7 +211,6 @@ class AtaxxStartScreen(BoxLayout):
         timer_layout.add_widget(limited_checkbox)
         popup_layout.add_widget(timer_layout)
 
-        # Slider for limited timer with dynamic label
         slider_layout = BoxLayout(orientation="vertical", spacing=10)
         slider_label = Label(
             text=f"Set Time (Minutes) for Each Player: {self.settings.get('timer_minutes', 1)}",
@@ -278,7 +277,6 @@ class AtaxxStartScreen(BoxLayout):
         save_button.bind(on_press=save_settings)
         popup_layout.add_widget(save_button)
 
-        # Create and open popup
         config_popup = Popup(
             title="Configuration Settings",
             content=popup_layout,
@@ -627,7 +625,7 @@ class GameScreen(FloatLayout):
                     cell_y = self.grid_y + target_row * self.cell_size
 
                     with self.canvas:
-                        Color(1, 1, 0, 0.5)  # Yellow translucent glow
+                        Color(1, 1, 0, 0.5)
                         glow_rect = RoundedRectangle(
                             pos=(cell_x, cell_y),
                             size=(self.cell_size, self.cell_size),
@@ -733,7 +731,6 @@ class GameScreen(FloatLayout):
 
         color_instruction = references['color']
 
-        # Define the animation
         anim = Animation(r=target_color[0], g=target_color[1], b=target_color[2], a=target_color[3], duration=0.5)
         
         def finalize_conversion(*_):
@@ -802,7 +799,7 @@ class GameScreen(FloatLayout):
 
         anim = (
             Animation(pos=(target_x, target_y), duration=0.5, t="out_bounce") +
-            Animation(size=src_size, duration=0.2)  # Restore the size after the bounce
+            Animation(size=src_size, duration=0.2)
         )
 
         def finalize_jump(*_):
@@ -958,7 +955,7 @@ class GameScreen(FloatLayout):
                         target_row = row_idx + d_row
                         target_col = col_idx + d_col
                         if 0 <= target_row < self.rows and 0 <= target_col < self.cols:
-                            if self.board_state[target_row][target_col] == 0:  # Empty cell
+                            if self.board_state[target_row][target_col] == 0:
                                 return True
         return False
 
@@ -1084,7 +1081,6 @@ class MakeNewLevelScreen(FloatLayout):
 
         self.draw_grid_with_lighting()
 
-        # Add buttons
         self.add_widget(self.create_button("Back to Start", self.go_back, 0.3))
         self.add_widget(self.create_button("Save Level", self.save_level, 0.7))
         self.show_description_popup()
@@ -1204,7 +1200,7 @@ class MakeNewLevelScreen(FloatLayout):
 
     def clear_visual_cell(self, x, y):
         with self.canvas.before:
-            Color(0, 0, 0, 0)  # Transparent color
+            Color(0, 0, 0, 0)
             Rectangle(pos=(x, y), size=(self.cell_size, self.cell_size))
 
     def create_button(self, text, callback, x_position):
