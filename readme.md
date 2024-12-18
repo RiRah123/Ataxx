@@ -44,7 +44,7 @@ Install **Python**, **Kivy** and **NumPy** using pip:
 pip install kivy numpy
 ```
 
-### Install Dependencies  
+### Running application  
 Run the app using python:  
 ```bash
 python main.py
