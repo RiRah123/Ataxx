@@ -27,7 +27,7 @@ I implemented the following extra credit features:
 
 - Added a Player vs Computer mode which you can access through the settings menu.
 - I used a **SimpleNet** model help select moves that maximize the positive difference in total pieces between the two teams.
-  -I added vocalized feedback where the Computer responds with happy or sad voice message.
+- I added vocalized feedback where the Computer responds with happy or sad voice message.
 
 ### Level Creation Tool
 
