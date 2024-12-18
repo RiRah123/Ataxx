@@ -6,14 +6,14 @@
 Ataxx is a turn-based strategy game where two players compete to dominate a 7x7 grid board. Players can clone or jump their pieces to convert opponents’ pieces into their own. The player with the most pieces at the end of the game wins. This implementation introduces **Player vs Player** and **Player vs AI** modes, enhanced with animations, sound effects, and a custom **Level Editor**.
 
 <p align="center">
-  <img src="./image/ataxx-main.png" height="400" width="500" alt="Ataxx Main">
-  <img src="./image/ataxx-gameplay.png" height="400" width="500" alt="Ataxx Gameplay">
+  <img src="./image/ataxx-main.png" height="300" width="400" alt="Ataxx Main">
+  <img src="./image/ataxx-gameplay.png" height="300" width="400" alt="Ataxx Gameplay">
 </p>  
 
 <br/>
 <p align="center">
-  <img src="./image/ataxx-level-creator.png" height="400" width="500" alt="Level Creator">
-  <img src="./image/ataxx-ai.png" height="400" width="500" alt="AI Avatar Feedback">
+  <img src="./image/ataxx-level-creator.png" height="300" width="400" alt="Level Creator">
+  <img src="./image/ataxx-ai.png" height="300" width="300" alt="AI Avatar Feedback">
 </p>  
 
 ## Problem: What problem does this project address?  
