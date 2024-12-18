@@ -7,13 +7,13 @@ Ataxx is a turn-based strategy game where two players compete to dominate a 7x7 
 
 <p align="center">
   <img src="./image/ataxx-main.png" height="400" width="500" alt="Ataxx Main">
-  <img src="./image/ataxx-gameplay.png" height="350" width="700" alt="Ataxx Gameplay">
+  <img src="./image/ataxx-gameplay.png" height="400" width="500" alt="Ataxx Gameplay">
 </p>  
 
 <br/>
 <p align="center">
-  <img src="./image/ataxx-level-creator.png" height="350" width="350" alt="Level Creator">
-  <img src="./image/ataxx-ai.png" height="350" width="350" alt="AI Avatar Feedback">
+  <img src="./image/ataxx-level-creator.png" height="400" width="500" alt="Level Creator">
+  <img src="./image/ataxx-ai.png" height="400" width="500" alt="AI Avatar Feedback">
 </p>  
 
 ## Problem: What problem does this project address?  
