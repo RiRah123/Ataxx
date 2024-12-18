@@ -1,6 +1,5 @@
 # Ataxx
-[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)  
-[![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white)](https://numpy.org/)  
+[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/) [![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white)](https://numpy.org/)  
 
 ## Project Summary  
 Ataxx is a turn-based strategy game where two players compete to dominate a 7x7 grid board. Players can clone or jump their pieces to convert opponents’ pieces into their own. The player with the most pieces at the end of the game wins. This implementation introduces **Player vs Player** and **Player vs AI** modes, enhanced with animations, sound effects, and a custom **Level Editor**.
