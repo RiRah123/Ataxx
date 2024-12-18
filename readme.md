@@ -38,9 +38,14 @@ This implementation includes:
 To run the Ataxx Strategy Game, you need the following:
 
 ### Install Dependencies  
-Install **Python**, **Kivy**/**NumPy** using pip and then run the app using python:  
+Install **Python**, **Kivy** and **NumPy** using pip:  
 
 ```bash
 pip install kivy numpy
+```
+
+### Install Dependencies  
+Run the app using python:  
+```bash
 python main.py
 ```
